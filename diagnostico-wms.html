@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagnóstico WMS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<script>
+  // Número do WhatsApp do consultor (com código do país, sem símbolos)
+  const WHATSAPP_NUMBER = '5551985658875';
+</script>
+
+<style>
+/* ─── TOKENS ─────────────────────────────────── */
+:root {
+  --bg:         #ECF1F8;
+  --surface:    #FFFFFF;
+  --card:       #FFFFFF;
+  --border:     #D2DCE9;
+  --border-hi:  #A8BDD6;
+  --text:       #0C1824;
+  --text-2:     #4A627E;
+  --text-3:     #8AA3BE;
+  --accent:     #D4820A;
+  --accent-bg:  #FEF3DC;
+  --success:    #0C9E87;
+  --warn:       #C87800;
+  --danger:     #C03535;
+  --grid-line:  rgba(10,30,60,0.07);
+  --r:          8px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:         #080E18;
+    --surface:    #0D1B2A;
+    --card:       #152232;
+    --border:     #1C3048;
+    --border-hi:  #2D4F72;
+    --text:       #DAE6F2;
+    --text-2:     #7AA4C4;
+    --text-3:     #3B5878;
+    --accent:     #F5A623;
+    --accent-bg:  #1E1100;
+    --success:    #2DCFB3;
+    --warn:       #F5A623;
+    --danger:     #E05353;
+    --grid-line:  rgba(255,255,255,0.035);
+  }
+}
+:root[data-theme="dark"] {
+  --bg:         #080E18;
+  --surface:    #0D1B2A;
+  --card:       #152232;
+  --border:     #1C3048;
+  --border-hi:  #2D4F72;
+  --text:       #DAE6F2;
+  --text-2:     #7AA4C4;
+  --text-3:     #3B5878;
+  --accent:     #F5A623;
+  --accent-bg:  #1E1100;
+  --success:    #2DCFB3;
+  --warn:       #F5A623;
+  --danger:     #E05353;
+  --grid-line:  rgba(255,255,255,0.035);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+h1, h2, h3, h4 { font-family: 'Barlow Condensed', sans-serif; }
+button { cursor: pointer; font-family: inherit; }
+
+/* ─── PROGRESS RAIL ──────────────────────────── */
+.progress-rail {
+  position: fixed; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--border); z-index: 200;
+}
+.progress-fill {
+  height: 100%; background: var(--accent);
+  transition: width 0.5s cubic-bezier(.4,0,.2,1);
+  width: 0%;
+}
+
+/* ─── TOPNAV ─────────────────────────────────── */
+.topnav {
+  position: fixed; top: 3px; left: 0; right: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 32px; height: 56px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  z-index: 100;
+}
+.logo {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px; font-weight: 800;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--text);
+}
+.logo span { color: var(--accent); }
+.step-ind {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--text-3);
+  letter-spacing: 0.08em;
+}
+
+/* ─── MAIN ───────────────────────────────────── */
+.main { padding-top: 59px; }
+.step { display: none; }
+.step.active { display: block; }
+
+/* ─── STEP 1 INTRO & CONTACT ───────────────── */
+.hero-wrap {
+  position: relative; overflow: hidden;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.hero-grid-bg {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+}
+.hero-inner {
+  position: relative;
+  max-width: 720px; margin: 0 auto;
+  padding: 64px 24px 56px;
+}
+.eyebrow {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 18px;
+  display: flex; align-items: center; gap: 10px;
+}
+.hero-inner h1 {
+  font-size: clamp(42px, 7vw, 76px);
+  font-weight: 800; line-height: 1.0;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  text-wrap: balance;
+  color: var(--text);
+  margin-bottom: 22px;
+}
+.hero-inner h1 em { font-style: normal; color: var(--accent); }
+.hero-desc {
+  color: var(--text-2); font-size: 15px; line-height: 1.75;
+  max-width: 520px; margin-bottom: 10px;
+}
+.hero-meta {
+  display: flex; gap: 24px; flex-wrap: wrap;
+  margin-top: 28px;
+}
+.meta-item {
+  display: flex; align-items: center; gap: 8px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px; color: var(--text-3);
+  letter-spacing: 0.05em;
+}
+.meta-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent); flex-shrink: 0;
+}
+
+.contact-section {
+  max-width: 720px; margin: 0 auto;
+  padding: 40px 24px 64px;
+}
+.section-title {
+  font-size: 13px; font-weight: 700;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--text-3); margin-bottom: 20px;
+  display: flex; align-items: center; gap: 12px;
+}
+.section-title::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+.form-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px 28px 24px;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.form-grid .full { grid-column: 1 / -1; }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-2);
+}
+.field input, .field select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 15px; color: var(--text);
+  outline: none; transition: border-color .15s, box-shadow .15s;
+}
+.field input::placeholder { color: var(--text-3); }
+.field input:focus, .field select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(212,130,10,.15);
+}
+.field input.err, .field select.err { border-color: var(--danger); }
+.field select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238AA3BE' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+  cursor: pointer;
+}
+.field select option { background: var(--surface); color: var(--text); }
+
+.err-note {
+  font-size: 13px; color: var(--danger);
+  margin-top: 14px; display: none; padding: 10px 14px;
+  background: rgba(192,53,53,.08);
+  border: 1px solid rgba(192,53,53,.25);
+  border-radius: 6px;
+}
+.err-note.show { display: block; }
+
+.disclaimer {
+  font-size: 12px; color: var(--text-3);
+  margin-top: 16px; display: flex; align-items: center; gap: 6px;
+}
+
+/* ─── BUTTON ─────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 13px 28px; border-radius: var(--r);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 15px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  border: none; transition: all .15s;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { filter: brightness(1.12); transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+.btn-ghost {
+  background: transparent; color: var(--text-2);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover { border-color: var(--border-hi); color: var(--text); }
+.btn-row {
+  display: flex; gap: 12px; align-items: center;
+  justify-content: space-between; margin-top: 24px;
+}
+
+/* ─── STEP 2 QUESTIONS ─────────────────────── */
+.questions-wrap {
+  max-width: 760px; margin: 0 auto;
+  padding: 36px 24px 80px;
+}
+.q-section-header { margin-bottom: 28px; }
+.q-section-header h2 {
+  font-size: 32px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--text);
+}
+.q-section-header p { color: var(--text-2); font-size: 14px; margin-top: 6px; }
+
+.cat-block { margin-bottom: 28px; }
+.cat-label {
+  display: flex; align-items: center; gap: 10px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--text-3); margin-bottom: 10px;
+}
+.cat-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.cat-icon { color: var(--accent); font-size: 14px; }
+
+.q-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px 16px;
+  margin-bottom: 10px;
+  transition: border-color .2s;
+}
+.q-card.done { border-color: var(--border-hi); }
+.q-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-3);
+  letter-spacing: 0.06em; margin-bottom: 6px;
+}
+.q-text {
+  font-size: 14px; font-weight: 500;
+  color: var(--text); line-height: 1.55;
+  margin-bottom: 14px;
+}
+
+/* ─── OPTION BUTTONS (multiple choice) ──────── */
+.opt-group {
+  display: flex; flex-direction: column; gap: 6px;
+}
+.opt-btn {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg);
+  color: var(--text-2);
+  text-align: left;
+  transition: all .14s;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px; line-height: 1.4;
+  width: 100%;
+}
+.opt-btn:hover { border-color: var(--accent); background: var(--accent-bg); color: var(--text); }
+.opt-btn.sel { border-color: var(--accent); background: var(--accent-bg); color: var(--text); }
+.opt-dot {
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid var(--border-hi);
+  flex-shrink: 0; transition: all .14s;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface);
+}
+.opt-btn.sel .opt-dot {
+  background: var(--accent); border-color: var(--accent);
+}
+.opt-dot-inner {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #fff; opacity: 0; transition: opacity .14s;
+}
+.opt-btn.sel .opt-dot-inner { opacity: 1; }
+.opt-label { flex: 1; }
+.opt-score {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text-3);
+  flex-shrink: 0; letter-spacing: 0.04em;
+  transition: color .14s;
+}
+.opt-btn.sel .opt-score { color: var(--accent); }
+
+/* ─── STEP 3 RESULTS ───────────────────────── */
+.results-wrap {
+  max-width: 760px; margin: 0 auto;
+  padding: 36px 24px 80px;
+}
+.results-header { margin-bottom: 24px; }
+.results-header h2 {
+  font-size: 36px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--text); line-height: 1.05;
+}
+
+.score-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 36px 36px 32px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 28px; align-items: start;
+  margin-bottom: 20px;
+}
+.score-lbl {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 8px;
+}
+.score-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(26px,4vw,40px); font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.02em;
+  color: var(--text); line-height: 1.1;
+  margin-bottom: 10px;
+}
+.score-blurb {
+  color: var(--text-2); font-size: 14px;
+  line-height: 1.65; max-width: 420px;
+}
+.score-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 14px; border-radius: 100px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  margin-top: 14px;
+}
+.badge-crit { background: rgba(192,53,53,.12); color: var(--danger); }
+.badge-dev  { background: rgba(200,120,0,.12);  color: var(--warn); }
+.badge-func { background: rgba(60,160,80,.12);  color: #3CA050; }
+.badge-high { background: rgba(45,207,179,.12); color: var(--success); }
+
+.score-dial {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  min-width: 100px;
+}
+.dial-number {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 64px; font-weight: 500; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.dial-max { font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: var(--text-3); }
+.dial-ring {
+  width: 80px; height: 6px;
+  background: var(--border);
+  border-radius: 100px; overflow: hidden; margin-top: 6px;
+}
+.dial-ring-fill { height: 100%; border-radius: 100px; transition: width 1.2s cubic-bezier(.4,0,.2,1); }
+
+.cat-results-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 26px 28px; margin-bottom: 16px;
+}
+.cat-results-card h3 {
+  font-size: 16px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--text); margin-bottom: 20px;
+}
+.cat-bar-row {
+  display: grid;
+  grid-template-columns: 200px 1fr 60px;
+  align-items: center; gap: 12px; margin-bottom: 12px;
+}
+.cat-bar-row:last-child { margin-bottom: 0; }
+.cat-bar-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.09em; text-transform: uppercase;
+  color: var(--text-2);
+}
+.bar-bg { height: 8px; background: var(--bg); border-radius: 100px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 100px; width: 0%; transition: width 1.1s cubic-bezier(.4,0,.2,1); }
+.bar-val {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px; color: var(--text-3);
+  text-align: right; font-variant-numeric: tabular-nums;
+}
+
+.recs-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 26px 28px; margin-bottom: 20px;
+}
+.recs-card h3 {
+  font-size: 16px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--text); margin-bottom: 18px;
+}
+.rec-item {
+  display: flex; gap: 14px;
+  padding: 14px 0; border-top: 1px solid var(--border);
+}
+.rec-item:first-of-type { border-top: none; padding-top: 0; }
+.rec-icon {
+  width: 34px; height: 34px; border-radius: 8px;
+  background: var(--accent-bg);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+.rec-body h4 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 15px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text); margin-bottom: 2px;
+}
+.rec-body p { font-size: 13px; color: var(--text-2); line-height: 1.55; }
+.recs-cta {
+  margin-top: 18px; padding: 14px 16px;
+  border-radius: 8px;
+  background: var(--accent-bg);
+  border: 1px solid rgba(212,130,10,.2);
+  font-size: 13px; color: var(--text-2);
+  line-height: 1.6;
+}
+
+.features-list {
+  margin-top: 16px; display: flex; flex-direction: column; gap: 8px;
+}
+.feature-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 13px; color: var(--text-2); line-height: 1.5;
+}
+.feature-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent); flex-shrink: 0; margin-top: 6px;
+}
+.wms-rec-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 26px 28px; margin-bottom: 16px;
+}
+.wms-rec-card h3 {
+  font-size: 16px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--text); margin-bottom: 6px;
+}
+.wms-rec-card p { font-size: 13px; color: var(--text-2); line-height: 1.6; }
+.wms-list {
+  margin-top: 16px; display: flex; flex-direction: column; gap: 8px;
+}
+.wms-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg); border-radius: 7px;
+  border: 1px solid var(--border);
+}
+.wms-item-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 14px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text);
+}
+.wms-item-desc { font-size: 12px; color: var(--text-2); }
+.wms-tag {
+  margin-left: auto; flex-shrink: 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.06em;
+  padding: 3px 8px; border-radius: 100px;
+  background: var(--accent-bg); color: var(--accent);
+}
+
+.results-footer {
+  display: flex; gap: 12px; justify-content: flex-end;
+  margin-top: 24px; flex-wrap: wrap;
+}
+
+/* ─── CTA WHATSAPP ─────────────────────────── */
+.cta-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 36px 36px 32px;
+  margin-top: 28px;
+  display: flex; align-items: center;
+  justify-content: space-between; gap: 24px;
+  flex-wrap: wrap;
+}
+.cta-text h3 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 26px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--text); margin-bottom: 6px;
+}
+.cta-text p { font-size: 14px; color: var(--text-2); line-height: 1.65; max-width: 380px; }
+.btn-cta-whatsapp {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  background: #25D366; color: #fff;
+  padding: 14px 28px; border-radius: var(--r);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  border: none; text-decoration: none;
+  transition: filter .15s, transform .15s;
+  cursor: pointer; width: 100%;
+}
+.btn-cta-whatsapp:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.btn-cta-whatsapp svg { flex-shrink: 0; }
+.cta-actions { display: flex; flex-direction: column; gap: 10px; align-items: stretch; flex-shrink: 0; min-width: 220px; }
+.btn-site-link {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 14px 28px; border-radius: var(--r);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  border: 1px solid var(--border);
+  background: transparent; color: var(--text-2);
+  text-decoration: none;
+  transition: border-color .15s, color .15s, transform .15s;
+  white-space: nowrap; width: 100%;
+}
+.btn-site-link:hover { border-color: var(--border-hi); color: var(--text); transform: translateY(-1px); }
+.topnav-site {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 15px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-2); text-decoration: none;
+  padding: 7px 14px; border-radius: var(--r);
+  border: 1px solid var(--border);
+  transition: border-color .15s, color .15s, background .15s;
+}
+.topnav-site:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+.topnav-site svg { transition: transform .2s; }
+.topnav-site:hover svg { transform: translate(2px, -2px); }
+
+/* ─── RESPONSIVE ─────────────────────────────── */
+@media (max-width: 600px) {
+  .topnav { padding: 0 16px; }
+  .topnav-site { font-size: 13px; padding: 6px 10px; }
+  .topnav-site span { display: none; }
+  .hero-inner { padding: 48px 16px 40px; }
+  .contact-section { padding: 28px 16px 48px; }
+  .form-grid { grid-template-columns: 1fr; }
+  .questions-wrap { padding: 28px 16px 64px; }
+  .results-wrap { padding: 28px 16px 64px; }
+  .score-card { grid-template-columns: 1fr; }
+  .dial-number { font-size: 48px; }
+  .cat-bar-row { grid-template-columns: 1fr; gap: 4px; }
+  .bar-val { text-align: left; }
+  .cta-card { flex-direction: column; padding: 24px 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bar-fill, .dial-ring-fill { transition: none; }
+  .btn-primary:hover { transform: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="progress-rail"><div class="progress-fill" id="pFill"></div></div>
+
+<nav class="topnav">
+  <div class="logo">Diagnóstico <span>WMS</span></div>
+  <div style="display:flex; align-items:center; gap:20px;">
+    <a href="https://www.ibslogistica.com.br" target="_blank" class="topnav-site">
+      ibslogistica.com.br
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 13L13 3M13 3H7M13 3v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+    <div class="step-ind" id="stepInd">01 / 03</div>
+  </div>
+</nav>
+
+<div class="main">
+
+<!-- ════════════ STEP 1 ════════════ -->
+<div class="step active" id="step-1">
+  <div class="hero-wrap">
+    <div class="hero-grid-bg"></div>
+    <div class="hero-inner">
+      <div class="eyebrow">Diagnóstico de Tecnologia Logística</div>
+      <h1>Qual <em>WMS</em> é o certo para sua operação?</h1>
+      <p class="hero-desc">
+        Responda 10 perguntas e descubra qual nível de WMS sua operação realmente precisa e se o sistema que você utiliza hoje está adequado à complexidade do seu armazém.
+      </p>
+      <div class="hero-meta">
+        <div class="meta-item"><div class="meta-dot"></div> 10 perguntas</div>
+        <div class="meta-item"><div class="meta-dot"></div> 3 minutos</div>
+        <div class="meta-item"><div class="meta-dot"></div> 5 dimensões avaliadas</div>
+        <div class="meta-item"><div class="meta-dot"></div> Resultado instantâneo</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="contact-section">
+    <p style="font-size:14px; color:var(--text-2); line-height:1.65; margin-bottom:20px;">
+      Ao final, você verá se o seu WMS atual está abaixo, adequado ou acima da necessidade da operação.
+    </p>
+    <div class="section-title">Identificação</div>
+    <div class="form-card">
+      <div class="form-grid">
+        <div class="field full">
+          <label>Nome completo</label>
+          <input type="text" id="f-name" placeholder="Seu nome" autocomplete="name">
+        </div>
+        <div class="field">
+          <label>Empresa</label>
+          <input type="text" id="f-company" placeholder="Nome da empresa" autocomplete="organization">
+        </div>
+        <div class="field">
+          <label>Cargo</label>
+          <input type="text" id="f-role" placeholder="Ex: Gerente de Logística" autocomplete="organization-title">
+        </div>
+        <div class="field">
+          <label>E-mail</label>
+          <input type="email" id="f-email" placeholder="seu@email.com" autocomplete="email">
+        </div>
+        <div class="field">
+          <label>Telefone <span style="font-weight:400; text-transform:none; letter-spacing:0; color:var(--text-3)">(opcional)</span></label>
+          <input type="tel" id="f-phone" placeholder="(11) 99999-9999" autocomplete="tel">
+        </div>
+        <div class="field full">
+          <label>Ramo de atividade</label>
+          <select id="f-segment">
+            <option value="" disabled selected>Selecione o segmento da empresa</option>
+            <option value="E-commerce">E-commerce</option>
+            <option value="Varejo & Distribuição">Varejo &amp; Distribuição</option>
+            <option value="Indústria & Manufatura">Indústria &amp; Manufatura</option>
+            <option value="Alimentos & Bebidas">Alimentos &amp; Bebidas</option>
+            <option value="Farmacêutico & Saúde">Farmacêutico &amp; Saúde</option>
+            <option value="Automotivo">Automotivo</option>
+            <option value="Agronegócio">Agronegócio</option>
+            <option value="Construção & Materiais">Construção &amp; Materiais</option>
+            <option value="Transporte & Logística">Transporte &amp; Logística</option>
+            <option value="Tecnologia">Tecnologia</option>
+            <option value="Serviços">Serviços</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
+      </div>
+      <div class="err-note" id="errContact">Preencha todos os campos antes de continuar.</div>
+      <div class="disclaimer">
+        <svg width="13" height="13" fill="none" viewBox="0 0 16 16"><path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-2.5a.75.75 0 0 1 .75.75v4a.75.75 0 0 1-1.5 0v-4A.75.75 0 0 1 8 5.5Zm0-2a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z" fill="currentColor"/></svg>
+        Seus dados são processados localmente neste dispositivo e não são enviados a nenhum servidor externo, exceto para envio do diagnóstico ao consultor.
+      </div>
+    </div>
+    <div class="btn-row" style="justify-content: flex-end;">
+      <button class="btn btn-primary" onclick="goStep2()">
+        Iniciar diagnóstico
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 8h12M9 3l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ STEP 2 ════════════ -->
+<div class="step" id="step-2">
+  <div class="questions-wrap">
+    <div class="q-section-header">
+      <div class="eyebrow">Avaliação de Complexidade Operacional</div>
+      <h2>Perfil da sua operação</h2>
+      <p>Selecione a alternativa que melhor descreve a realidade atual do seu armazém ou CD.</p>
+    </div>
+    <div id="questionsContainer"></div>
+    <div class="err-note" id="errQuestions">Responda todas as perguntas antes de ver o resultado.</div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="goStep(1)">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M14 8H2M7 3L2 8l5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Voltar
+      </button>
+      <button class="btn btn-primary" onclick="goStep3()">
+        Ver diagnóstico
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 8h12M9 3l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ STEP 3 ════════════ -->
+<div class="step" id="step-3">
+  <div class="results-wrap">
+    <div class="results-header">
+      <div class="eyebrow">Resultado</div>
+      <h2>Seu diagnóstico WMS</h2>
+    </div>
+
+    <div id="resultsContainer"></div>
+
+    <div class="results-footer">
+      <button class="btn btn-ghost" onclick="goStep(1); resetAll();">Refazer diagnóstico</button>
+      <button class="btn btn-ghost" id="btnCopy" onclick="copyResult()">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M5.5 3.5H3a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 3 14.5h8a1.5 1.5 0 0 0 1.5-1.5v-2.5M5.5 3.5V2A.5.5 0 0 1 6 1.5h8A.5.5 0 0 1 14.5 2v8a.5.5 0 0 1-.5.5h-1.5M5.5 3.5H10a.5.5 0 0 1 .5.5v4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Copiar resultado
+      </button>
+    </div>
+
+    <div class="cta-card">
+      <div class="cta-text">
+        <h3>Podemos te ajudar?</h3>
+        <p>Entre em contato e fale com nosso consultor. Especificamos e implementamos WMS para operações de todos os portes e perfis.</p>
+      </div>
+      <div class="cta-actions">
+        <a id="btnWhatsApp" href="#" target="_blank" class="btn-cta-whatsapp">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+          Falar com consultor
+        </a>
+        <a href="https://www.ibslogistica.com.br" target="_blank" class="btn-site-link">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          Visite nosso site
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+/* ─── CATEGORIAS ─────────────────────────────── */
+const CATS = [
+  { name: "Volume & Escala",               icon: "📦", max: 10 },
+  { name: "Perfil & Estrutura",            icon: "🏭", max: 10 },
+  { name: "Rastreabilidade & Conformidade",icon: "🔍", max: 10 },
+  { name: "Automação & Integração",        icon: "⚙️",  max: 15 },
+  { name: "Gestão & Pessoas",              icon: "📊", max: 5  },
+];
+
+/* ─── PERGUNTAS E OPÇÕES ─────────────────────── */
+const QUESTIONS = [
+  {
+    id: 1, cat: 0,
+    text: "Quantos SKUs ativos a operação gerencia?",
+    opts: [
+      { s: 1, l: "Até 1.000 SKUs" },
+      { s: 2, l: "1.001 a 5.000 SKUs" },
+      { s: 3, l: "5.001 a 20.000 SKUs" },
+      { s: 4, l: "20.001 a 100.000 SKUs" },
+      { s: 5, l: "Acima de 100.000 SKUs" },
+    ]
+  },
+  {
+    id: 2, cat: 0,
+    text: "Qual o volume médio de volumes (itens/caixas) expedidos por dia?",
+    opts: [
+      { s: 1, l: "Até 500 volumes/dia" },
+      { s: 2, l: "501 a 2.000 volumes/dia" },
+      { s: 3, l: "2.001 a 10.000 volumes/dia" },
+      { s: 4, l: "10.001 a 50.000 volumes/dia" },
+      { s: 5, l: "Acima de 50.000 volumes/dia" },
+    ]
+  },
+  {
+    id: 3, cat: 1,
+    text: "Qual é o modelo de negócio logístico da operação?",
+    opts: [
+      { s: 1, l: "Armazém próprio com fluxo simples de entrada e saída" },
+      { s: 2, l: "Distribuidor ou varejista com múltiplos canais (B2B + B2C)" },
+      { s: 3, l: "Indústria com manufatura integrada ao armazém (requisição e entrada de produção)" },
+      { s: 4, l: "Operador Logístico (3PL) com múltiplos clientes no mesmo CD" },
+      { s: 5, l: "Operação omnichannel com fulfillment, cross-docking e SLAs diferenciados por canal" },
+    ]
+  },
+  {
+    id: 4, cat: 1,
+    text: "Quantos Centros de Distribuição ou armazéns a empresa opera?",
+    opts: [
+      { s: 1, l: "Apenas 1 CD ou armazém" },
+      { s: 2, l: "2 a 3 CDs" },
+      { s: 3, l: "4 a 10 CDs" },
+      { s: 4, l: "11 a 30 CDs ou locais de estoque" },
+      { s: 5, l: "Mais de 30 locais ou rede nacional/global" },
+    ]
+  },
+  {
+    id: 5, cat: 2,
+    text: "Qual o nível de rastreabilidade e conformidade fiscal exigido?",
+    opts: [
+      { s: 1, l: "Controle básico de entrada e saída sem exigência de rastreabilidade" },
+      { s: 2, l: "Controle de lote e validade desejável; NF-e emitida pelo ERP" },
+      { s: 3, l: "Rastreabilidade por lote/série obrigatória (setor regulado) com NF-e integrada ao WMS" },
+      { s: 4, l: "Rastreabilidade completa com SPED, laudos de conferência e histórico de movimentações" },
+      { s: 5, l: "Conformidade end-to-end: rastreabilidade de fornecedor a cliente, compliance fiscal nativo e auditoria total" },
+    ]
+  },
+  {
+    id: 6, cat: 2,
+    text: "Como é planejada e executada a separação (picking) de pedidos?",
+    opts: [
+      { s: 1, l: "Separação manual sem roteiro o operador decide o caminho" },
+      { s: 2, l: "Lista de separação em papel ou planilha" },
+      { s: 3, l: "Onda de separação agendada com coletor RF e roteirização por zona" },
+      { s: 4, l: "Streaming picking sob demanda, pick-to-light ou voice picking" },
+      { s: 5, l: "Picking automatizado integrado a sorter, AMR ou estação GTP" },
+    ]
+  },
+  {
+    id: 7, cat: 3,
+    text: "Como é gerenciado o fluxo de entrada e saída de veículos nas docas?",
+    opts: [
+      { s: 1, l: "Sem controle veículos chegam e aguardam em fila" },
+      { s: 2, l: "Controle informal por planilha ou comunicação verbal" },
+      { s: 3, l: "Agendamento de docas pelo WMS com janelas de recebimento e expedição" },
+      { s: 4, l: "Plataforma de agendamento com acesso externo para fornecedores e transportadoras" },
+      { s: 5, l: "Yard management integrado: pátio, rastreamento de carretas e visibilidade em tempo real" },
+    ]
+  },
+  {
+    id: 8, cat: 3,
+    text: "Quais sistemas precisam se integrar ao WMS?",
+    opts: [
+      { s: 1, l: "Apenas planilha ou sistema legado básico" },
+      { s: 2, l: "ERP (TOTVS, SAP, Senior, Oracle, etc.)" },
+      { s: 3, l: "ERP + e-commerce/marketplace e TMS" },
+      { s: 4, l: "ERP + e-commerce + TMS + EDI com fornecedores e portais de clientes" },
+      { s: 5, l: "Ecossistema complexo: ERP, TMS, OMS, MES, APIs B2B/EDI, WCS/WES e BI" },
+    ]
+  },
+  {
+    id: 9, cat: 3,
+    text: "Qual o nível de automação física do armazém?",
+    opts: [
+      { s: 1, l: "Operação 100% manual" },
+      { s: 2, l: "Empilhadeiras e transpaleteiras convencionais com coletores RF" },
+      { s: 3, l: "Esteiras, conveyors e sorters controlados por WCS (Warehouse Control System)" },
+      { s: 4, l: "AMRs ou robôs colaborativos orquestrados por WES (Warehouse Execution System)" },
+      { s: 5, l: "AS/RS, mini-load ou AutoStore com orquestração integrada WCS + WES" },
+    ]
+  },
+  {
+    id: 10, cat: 4,
+    text: "Como a operação mede e gerencia a produtividade da equipe de armazém?",
+    opts: [
+      { s: 1, l: "Sem indicadores a percepção do gestor define o desempenho" },
+      { s: 2, l: "Relatórios básicos de entrada/saída sem detalhamento por operador" },
+      { s: 3, l: "KPIs por turno com controle de metas e produtividade por equipe" },
+      { s: 4, l: "Gestão de Mão de Obra (GML) integrada ao WMS: metas, tempo-padrão e pontuação por operador" },
+      { s: 5, l: "Torre de controle com produtividade individual em tempo real, gamificação e previsão de capacidade" },
+    ]
+  },
+];
+
+/* ─── RECOMENDAÇÕES POR CATEGORIA ──────────────── */
+const CAT_RECS = [
+  {
+    icon: "📦",
+    low:  "Volume e escala ainda contidos. Um WMS de entrada resolve bem a necessidade atual. Priorize acuracidade de estoque e visibilidade de SKUs antes de investir em módulos avançados.",
+    high: "Alto volume de expedição exige WMS com ondas de separação, reabastecimento automático e capacidade de throughput. Avalie soluções com precificação por volume pode ser mais vantajoso a longo prazo.",
+  },
+  {
+    icon: "🏭",
+    low:  "Perfil de operação simples. WMS com módulos básicos de recebimento, armazenagem e expedição já atende. Se for crescer para 3PL ou multi-CD, considere isso na escolha do sistema desde o início.",
+    high: "Perfil complexo com manufatura, 3PL ou omnichannel exige WMS configurável por segmento com faturamento 3PL, fluxos de requisição de materiais para indústria, e gestão de SLAs diferenciados por cliente/canal.",
+  },
+  {
+    icon: "🔍",
+    low:  "Conformidade ainda em nível básico. Inicie com controle de lote e validade. Para operações brasileiras, verifique se o WMS gera NF-e nativamente ou depende do ERP isso impacta velocidade de expedição.",
+    high: "Alta exigência regulatória e fiscal. O WMS precisa de rastreabilidade nativa por série/lote, integração com SPED e suporte a compliance fiscal brasileiro não apenas passagem de nota pelo ERP.",
+  },
+  {
+    icon: "⚙️",
+    low:  "Integrações e automação ainda simples. Mapeie o ecossistema antes: a integração bidirecional com ERP via API é o primeiro passo. Planeje agendamento de docas mesmo operações médias ganham muito com ele.",
+    high: "Ecossistema de alta complexidade com automação física avançada. Diferencie WCS (esteiras/sorters) de WES (orquestração de AMRs/robótica) nem todo WMS tem WES nativo, e isso pode ser um limitador crítico.",
+  },
+  {
+    icon: "📊",
+    low:  "Gestão de pessoas ainda informal. Configure desde o início KPIs básicos por operador: unidades separadas/hora, acuracidade por turno e OTIF interno. Esses dados são o ponto de partida para a Gestão de Mão de Obra.",
+    high: "Alta maturidade em gestão de desempenho. Avalie WMS com módulo de Gestão de Mão de Obra (GML) integrado metas por operador, tempo-padrão por tarefa e previsão de capacidade reduzem custo de mão de obra em 15–25%.",
+  },
+];
+
+/* ─── NÍVEIS WMS ─────────────────────────────── */
+const WMS_LEVELS = [
+  {
+    min: 10, max: 21,
+    name: "WMS Básico",
+    badge: "badge-crit",
+    blurb: "Sua operação tem baixa complexidade e está em fase inicial de estruturação. Um sistema de controle de estoque básico ou WMS de entrada já atende bem às necessidades atuais, com custo de implantação reduzido.",
+    features: [
+      "Controle de entrada e saída por SKU com endereçamento simples e emissão de etiquetas",
+      "Registro de movimentações e inventário com relatórios básicos de acuracidade",
+      "Integração com ERP para NF-e e conferência de recebimento e expedição",
+    ],
+    wms: [
+      { name: "Tiny ERP / Bling", desc: "Para operações de e-commerce de menor porte", tag: "Entrada" },
+      { name: "WMS Mínimo (módulo ERP)", desc: "Módulo WMS embutido em ERP mid-market", tag: "Integrado" },
+      { name: "Totvs Warehouse", desc: "Para operações brasileiras em crescimento", tag: "Nacional" },
+    ],
+    rec: "Invista antes em processos e equipe do que em tecnologia. Um WMS básico bem implantado gera mais resultado do que um enterprise mal configurado.",
+  },
+  {
+    min: 22, max: 32,
+    name: "WMS Mid-Market",
+    badge: "badge-dev",
+    blurb: "Operação em estruturação com volume e complexidade crescentes. Você precisa de um WMS mid-market com controle de lote, picking por RF, integração com ERP e relatórios de KPIs.",
+    features: [
+      "Controle de lote, série e validade com rastreabilidade e compliance fiscal (NF-e integrada)",
+      "Onda de separação com coletor RF, roteirização por zona e ressuprimento de picking",
+      "Integração bidirecional com ERP via API ou EDI e agendamento básico de docas",
+    ],
+    wms: [
+      { name: "Totvs WMS Logix", desc: "Robusto para operações industriais e distribuição", tag: "Nacional" },
+      { name: "Infor WMS",        desc: "Mid-market com bom custo-benefício", tag: "Global" },
+      { name: "Senior WMS",       desc: "Forte integração com ERP Senior e SAP", tag: "Nacional" },
+    ],
+    rec: "Priorize a integração com ERP e a adoção de RF/coletor no picking. Esses dois pontos já eliminam a maioria dos erros e ganham visibilidade em tempo real.",
+  },
+  {
+    min: 33, max: 42,
+    name: "WMS Avançado",
+    badge: "badge-func",
+    blurb: "Operação madura com múltiplos canais, rastreabilidade exigente e automação pontual. Necessita de WMS robusto com módulos avançados de slotting, wave planning e integração com automação.",
+    features: [
+      "Wave planning, slotting dinâmico, streaming picking e gestão de múltiplos CDs",
+      "Rastreabilidade end-to-end com SPED, compliance fiscal nativo e histórico completo",
+      "Agendamento de docas com acesso externo para fornecedores, transportadoras e Gestão de Mão de Obra (GML)",
+    ],
+    wms: [
+      { name: "Manhattan WMS",    desc: "Líder global para operações complexas", tag: "Enterprise" },
+      { name: "Blue Yonder WMS",  desc: "Forte em previsão e omnichannel", tag: "Enterprise" },
+      { name: "SAP EWM",          desc: "Para operações já integradas ao SAP ERP", tag: "Enterprise" },
+    ],
+    rec: "Com complexidade nesse nível, o processo de seleção e implantação do WMS deve envolver consultoria especializada. O custo de um WMS errado supera em muito o custo da consultoria.",
+  },
+  {
+    min: 43, max: 50,
+    name: "WMS Enterprise",
+    badge: "badge-high",
+    blurb: "Operação de alta complexidade com automação, múltiplas integrações e exigência de visibilidade em tempo real. Necessita de plataforma enterprise com WCS/WES integrado e capacidade de orquestrar robótica.",
+    features: [
+      "Orquestração de robótica (AMRs, AS/RS, GTP, sorters) via WCS + WES integrado",
+      "Torre de controle com GML em tempo real, gamificação de operadores e KPIs preditivos",
+      "Yard management, integração nativa OMS/TMS/MES e ecossistema B2B/EDI de clientes e fornecedores",
+    ],
+    wms: [
+      { name: "Manhattan Active WM", desc: "Plataforma SaaS enterprise com IA integrada", tag: "Tier 1" },
+      { name: "Blue Yonder Luminate", desc: "Supply chain orquestrada com ML", tag: "Tier 1" },
+      { name: "SAP EWM + WCS",       desc: "Para ambientes altamente automatizados", tag: "Tier 1" },
+    ],
+    rec: "Nesse nível, o WMS é um ativo estratégico. Avalie TCO completo (licença + implantação + operação), não apenas o custo inicial, e envolva todas as áreas no projeto.",
+  },
+];
+
+/* ─── ESTADO ─────────────────────────────────── */
+const answers = {};
+
+/* ─── RENDER PERGUNTAS ───────────────────────── */
+function renderQuestions() {
+  const container = document.getElementById('questionsContainer');
+  let html = '';
+  CATS.forEach((cat, ci) => {
+    const qs = QUESTIONS.filter(q => q.cat === ci);
+    if (!qs.length) return;
+    html += `<div class="cat-block">
+      <div class="cat-label"><span class="cat-icon">${cat.icon}</span>${cat.name}</div>`;
+    qs.forEach(q => {
+      const safeOpts = q.opts.map(o => ({
+        s: o.s,
+        l: o.l.replace(/&/g,'&amp;').replace(/"/g,'&quot;')
+      }));
+      html += `<div class="q-card" id="qc-${q.id}">
+        <div class="q-num">PERGUNTA ${String(q.id).padStart(2,'0')}</div>
+        <div class="q-text">${q.text}</div>
+        <div class="opt-group">`;
+      safeOpts.forEach(o => {
+        const sel = answers[q.id] && answers[q.id].score === o.s ? ' sel' : '';
+        html += `<button class="opt-btn${sel}"
+          data-qid="${q.id}" data-score="${o.s}" data-label="${o.l}"
+          onclick="pickOpt(this)">
+          <div class="opt-dot"><div class="opt-dot-inner"></div></div>
+          <span class="opt-label">${o.l}</span>
+          <span class="opt-score">N${o.s}</span>
+        </button>`;
+      });
+      html += `</div></div>`;
+    });
+    html += `</div>`;
+  });
+  container.innerHTML = html;
+}
+
+function pickOpt(btn) {
+  const qid   = parseInt(btn.dataset.qid);
+  const score = parseInt(btn.dataset.score);
+  const label = btn.dataset.label;
+  answers[qid] = { score, label };
+
+  // Update button states within this question
+  document.querySelectorAll(`[data-qid="${qid}"]`).forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  document.getElementById('qc-' + qid).classList.add('done');
+}
+
+/* ─── NAVEGAÇÃO ──────────────────────────────── */
+function goStep(n) {
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  document.getElementById('step-' + n).classList.add('active');
+  const pcts = { 1: 8, 2: 50, 3: 100 };
+  document.getElementById('pFill').style.width = (pcts[n] || 0) + '%';
+  document.getElementById('stepInd').textContent = `0${n} / 03`;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function goStep2() {
+  const fields = ['f-name','f-company','f-role','f-email','f-segment'];
+  let ok = true;
+  fields.forEach(id => {
+    const el = document.getElementById(id);
+    const empty = !el.value.trim();
+    const emailErr = id === 'f-email' && el.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(el.value);
+    el.classList.toggle('err', empty || emailErr);
+    if (empty || emailErr) ok = false;
+  });
+  const note = document.getElementById('errContact');
+  note.classList.toggle('show', !ok);
+  if (ok) { note.classList.remove('show'); goStep(2); }
+}
+
+function goStep3() {
+  const missing = QUESTIONS.filter(q => !answers[q.id]);
+  const note = document.getElementById('errQuestions');
+  if (missing.length > 0) {
+    note.textContent = `Responda todas as perguntas antes de ver o resultado. (${missing.length} sem resposta)`;
+    note.classList.add('show');
+    const first = document.getElementById('qc-' + missing[0].id);
+    if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  note.classList.remove('show');
+  renderResults();
+  goStep(3);
+  enviarEmail();
+}
+
+/* ─── COR DA BARRA ───────────────────────────── */
+function barColor(pct) {
+  if (pct < 0.35) return 'var(--danger)';
+  if (pct < 0.55) return 'var(--warn)';
+  if (pct < 0.78) return '#3CA050';
+  return 'var(--success)';
+}
+
+/* ─── RENDERIZA RESULTADOS ───────────────────── */
+function renderResults() {
+  const total = QUESTIONS.reduce((s, q) => s + (answers[q.id] ? answers[q.id].score : 0), 0);
+  const maxTotal = 50;
+
+  // Pontuação por categoria (considerando max de cada cat)
+  const catScores = CATS.map((cat, ci) => {
+    const qs = QUESTIONS.filter(q => q.cat === ci);
+    return qs.reduce((s, q) => s + (answers[q.id] ? answers[q.id].score : 0), 0);
+  });
+
+  const pctTotal = total / maxTotal;
+
+  // Determina nível de WMS
+  const level = WMS_LEVELS.find(l => total >= l.min && total <= l.max) || WMS_LEVELS[0];
+
+  // Categorias mais fracas (em pct do máximo de cada cat)
+  const catPcts = CATS.map((cat, ci) => catScores[ci] / cat.max);
+  const weakestIdxs = catPcts
+    .map((p, i) => ({ i, p }))
+    .sort((a, b) => a.p - b.p)
+    .slice(0, 3)
+    .map(x => x.i);
+
+  const dialColor = barColor(pctTotal);
+  const name = document.getElementById('f-name').value.trim().split(' ')[0];
+
+  let html = `
+  <div class="score-card">
+    <div>
+      <div class="score-lbl">Resultado de ${name || 'você'}</div>
+      <div class="score-name">${level.name}</div>
+      <div class="score-blurb">${level.blurb}</div>
+      <div class="score-badge ${level.badge}">${level.name}</div>
+      <div class="features-list">
+        ${level.features.map(f => `<div class="feature-item"><div class="feature-dot"></div><span>${f}</span></div>`).join('')}
+      </div>
+    </div>
+    <div class="score-dial">
+      <div class="dial-number" style="color:${dialColor}" id="dialNum">0</div>
+      <div class="dial-max">/ ${maxTotal} pts</div>
+      <div class="dial-ring"><div class="dial-ring-fill" id="dialFill" style="background:${dialColor}"></div></div>
+    </div>
+  </div>
+
+  <div class="cat-results-card">
+    <h3>Pontuação por dimensão</h3>
+    ${CATS.map((cat, ci) => {
+      const pct = catScores[ci] / cat.max;
+      return `<div class="cat-bar-row">
+        <div class="cat-bar-name">${cat.icon} ${cat.name}</div>
+        <div class="bar-bg"><div class="bar-fill" id="bar-${ci}" style="background:${barColor(pct)}"></div></div>
+        <div class="bar-val">${catScores[ci]}/${cat.max}</div>
+      </div>`;
+    }).join('')}
+  </div>
+
+  `;
+
+  document.getElementById('resultsContainer').innerHTML = html;
+
+  // Atualiza link do WhatsApp
+  const empresa = document.getElementById('f-company').value.trim();
+  const msg = encodeURIComponent(
+    `Olá! Acabei de realizar o Diagnóstico WMS da IBS Logística.\n` +
+    `Empresa: ${empresa}\n` +
+    `Pontuação: ${total}/50 pts Nível: ${level.name}\n` +
+    `Gostaria de conversar sobre as opções de WMS para a nossa operação.`
+  );
+  document.getElementById('btnWhatsApp').href = `https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`;
+
+  // Anima contadores e barras
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      const dur = 1200;
+      const t0 = performance.now();
+      function tick(now) {
+        const p = Math.min((now - t0) / dur, 1);
+        const ease = 1 - Math.pow(1 - p, 3);
+        const el = document.getElementById('dialNum');
+        if (el) el.textContent = Math.round(ease * total);
+        if (p < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+      const fillEl = document.getElementById('dialFill');
+      if (fillEl) fillEl.style.width = (pctTotal * 100) + '%';
+      CATS.forEach((_, ci) => {
+        const el = document.getElementById('bar-' + ci);
+        if (el) el.style.width = ((catScores[ci] / CATS[ci].max) * 100) + '%';
+      });
+    }, 120);
+  });
+}
+
+/* ─── COPIAR RESULTADO ───────────────────────── */
+function copyResult() {
+  const total = QUESTIONS.reduce((s, q) => s + (answers[q.id] ? answers[q.id].score : 0), 0);
+  const level = WMS_LEVELS.find(l => total >= l.min && total <= l.max) || WMS_LEVELS[0];
+  const catScores = CATS.map((cat, ci) =>
+    QUESTIONS.filter(q => q.cat === ci).reduce((s, q) => s + (answers[q.id] ? answers[q.id].score : 0), 0)
+  );
+  let text = `DIAGNÓSTICO WMS\n`;
+  text += `--------------------\n`;
+  text += `Empresa: ${document.getElementById('f-company').value}\n`;
+  text += `Responsável: ${document.getElementById('f-name').value}\n`;
+  text += `Cargo: ${document.getElementById('f-role').value}\n`;
+  text += `Ramo: ${document.getElementById('f-segment').value}\n\n`;
+  text += `PONTUAÇÃO TOTAL: ${total}/50 → ${level.name}\n\n`;
+  text += `POR DIMENSÃO:\n`;
+  CATS.forEach((cat, ci) => { text += `  ${cat.icon} ${cat.name}: ${catScores[ci]}/${cat.max}\n`; });
+  text += `\nRespostas:\n`;
+  QUESTIONS.forEach(q => {
+    if (answers[q.id]) text += `  Q${q.id}: ${answers[q.id].label} (N${answers[q.id].score})\n`;
+  });
+
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('btnCopy');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✓ Copiado!';
+    setTimeout(() => btn.innerHTML = orig, 2000);
+  }).catch(() => {});
+}
+
+function resetAll() {
+  Object.keys(answers).forEach(k => delete answers[k]);
+  ['f-name','f-company','f-role','f-email','f-segment'].forEach(id => {
+    const el = document.getElementById(id);
+    el.value = '';
+    el.classList.remove('err');
+  });
+  renderQuestions();
+}
+
+/* ─── ENVIO POR E-MAIL ───────────────────────── */
+async function enviarEmail() {
+  const nome     = document.getElementById('f-name').value.trim();
+  const empresa  = document.getElementById('f-company').value.trim();
+  const cargo    = document.getElementById('f-role').value.trim();
+  const email    = document.getElementById('f-email').value.trim();
+  const telefone = document.getElementById('f-phone').value.trim();
+  const segmento = document.getElementById('f-segment').value.trim();
+
+  const total = QUESTIONS.reduce((s, q) => s + (answers[q.id] ? answers[q.id].score : 0), 0);
+  const level = WMS_LEVELS.find(l => total >= l.min && total <= l.max) || WMS_LEVELS[0];
+  const catScores = CATS.map((cat, ci) =>
+    QUESTIONS.filter(q => q.cat === ci).reduce((s, q) => s + (answers[q.id] ? answers[q.id].score : 0), 0)
+  );
+
+  const dimensoes = CATS.map((c, i) => `${c.icon} ${c.name}: ${catScores[i]}/${c.max}`).join(' | ');
+  const respostas = QUESTIONS.map(q =>
+    answers[q.id] ? `Q${q.id}: ${answers[q.id].label} (N${answers[q.id].score})` : ''
+  ).filter(Boolean).join(' | ');
+  const dataHoje = new Date().toLocaleDateString('pt-BR', {
+    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+  });
+
+  const payload = {
+    _subject:           `Diagnóstico WMS ${empresa} ${total}/50 pts ${level.name}`,
+    _captcha:           'false',
+    _template:          'table',
+    Nome:               nome,
+    Empresa:            empresa,
+    Cargo:              cargo,
+    Email:              email,
+    Telefone:           telefone,
+    Segmento:           segmento,
+    'Pontuação Total':  `${total}/50 pts`,
+    'Nível WMS':        level.name,
+    'Dimensões':        dimensoes,
+    'Respostas':        respostas,
+    'Data':             dataHoje,
+  };
+
+  try {
+    await fetch('https://formsubmit.co/ajax/otavio.diogenesprolog@gmail.com', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body:    JSON.stringify(payload),
+    });
+  } catch (e) {
+    // Silencioso resultado já foi exibido ao usuário
+  }
+}
+
+/* ─── INIT ───────────────────────────────────── */
+renderQuestions();
+goStep(1);
+</script>
+</body>
+</html>
